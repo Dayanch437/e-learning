@@ -8,6 +8,7 @@ import {
 import chatAPI from '../../services/chatAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import { useResponsive } from '../../components/Utils/ResponsiveProvider';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './Chat.css';
 
 // Type definitions
@@ -34,6 +35,7 @@ const { Option } = Select;
 const Chat: React.FC = () => {
   const { user } = useAuth();
   const { isMobile } = useResponsive();
+  const { t } = useLanguage();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);

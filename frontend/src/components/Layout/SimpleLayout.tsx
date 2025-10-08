@@ -16,6 +16,8 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useResponsive } from '../Utils/ResponsiveProvider';
+import { useLanguage } from '../../contexts/LanguageContext';
+import LanguageSelector from '../Utils/LanguageSelector';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -25,6 +27,7 @@ const SimpleLayout: React.FC = () => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const { isMobile } = useResponsive();
+  const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
 
@@ -41,37 +44,37 @@ const SimpleLayout: React.FC = () => {
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: t('dashboard'),
     },
     {
       key: '/grammar',
       icon: <BookOutlined />,
-      label: 'Grammar Lessons',
+      label: t('grammarLessons'),
     },
     {
       key: '/videos',
       icon: <PlayCircleOutlined />,
-      label: 'Video Lessons',
+      label: t('videoLessons'),
     },
     {
       key: '/vocabulary',
       icon: <TranslationOutlined />,
-      label: 'Vocabulary',
+      label: t('vocabulary'),
     },
     {
       key: '/chat',
       icon: <RobotOutlined />,
-      label: 'English Tutor',
+      label: t('englishTutor'),
     },
     ...(isAdmin ? [{
       key: '/categories',
       icon: <FolderOutlined />,
-      label: 'Categories',
+      label: t('categories'),
     }] : []),
     ...(isAdmin ? [{
       key: '/api-test',
       icon: <SettingOutlined />,
-      label: 'API Test',
+      label: t('apiTest'),
     }] : []),
   ];
 
@@ -79,7 +82,7 @@ const SimpleLayout: React.FC = () => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: 'Logout',
+      label: t('logout'),
       onClick: handleLogout,
     },
   ];
@@ -125,7 +128,7 @@ const SimpleLayout: React.FC = () => {
         >
           <div style={{ padding: '16px', textAlign: 'center' }}>
             <Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-              {collapsed ? 'E-L' : 'E-Learning'}
+              {collapsed ? 'E-L' : t('eLearning')}
             </Title>
           </div>
           
@@ -143,7 +146,7 @@ const SimpleLayout: React.FC = () => {
           closeIcon={<CloseOutlined />}
           title={
             <div style={{ color: '#1890ff', fontWeight: 'bold' }}>
-              E-Learning
+              {t('eLearning')}
             </div>
           }
           styles={{
@@ -175,11 +178,12 @@ const SimpleLayout: React.FC = () => {
             )}
             
             <Title level={isMobile ? 5 : 3} style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {isMobile ? 'Learning Platform' : 'Turkmen-English Learning Platform'}
+              {isMobile ? t('learningPlatform') : t('turkmenEnglishLearningPlatform')}
             </Title>
           </div>
           
-          <Space>
+          <Space size="middle">
+            <LanguageSelector mode="button" />
             {!isMobile && (
               <Tag color={getRoleColor(user?.role || '')}>
                 {user?.role?.toUpperCase()}
