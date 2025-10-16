@@ -243,6 +243,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 # Gemini AI Settings
-GEMINI_API_KEY = config('GEMINI_API_KEY', default='AIzaSyAwmntVhO5eNAXU-7HYrBX3HfhokORCGuY')
-# GEMINI_API_KEY = config('GEMINI_API_KEY', default='AIzaSyABBhGjC1Ekh9ghn3I17kcur5zwSoJFpQU')
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='AIzaSyABBhGjC1Ekh9ghn3I17kcur5zwSoJFpQU')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
