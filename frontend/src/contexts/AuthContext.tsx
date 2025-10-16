@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+// Use environment variable directly - matching the API configuration
+const API_BASE_URL = 'http://192.168.1.110:8000/api/v1';
+
+console.log('🔧 AuthContext Debug:');
+console.log('API_BASE_URL for authentication:', API_BASE_URL);
+
 interface User {
   id: number;
   username: string;
@@ -52,7 +58,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/auth/login/', {
+      const loginUrl = `${API_BASE_URL}/auth/login/`;
+      console.log('🔐 AuthContext login URL:', loginUrl);
+      console.log('📧 Login email:', email);
+
+      const response = await fetch(loginUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,37 +72,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error(errorData?.detail || 'Login failed');
       }
 
       const data = await response.json();
-      
-      setUser(data.user);
-      setAccessToken(data.access);
-      setRefreshToken(data.refresh);
-      
-      // Store in localStorage
-      localStorage.setItem('accessToken', data.access);
-      localStorage.setItem('refreshToken', data.refresh);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-    } catch (error) {
+      console.log('✅ Login successful:', data);
+
+      // Store tokens and user data
+      if (data.access) {
+        localStorage.setItem('accessToken', data.access);
+        setAccessToken(data.access);
+      }
+      if (data.refresh) {
+        localStorage.setItem('refreshToken', data.refresh);
+        setRefreshToken(data.refresh);
+      }
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
+      }
+    } catch (error: any) {
+      console.error('❌ AuthContext login error:', error);
       throw error;
     }
   };
 
   const logout = () => {
-    setUser(null);
-    setAccessToken(null);
-    setRefreshToken(null);
+    console.log('🚪 Logging out...');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    setAccessToken(null);
+    setRefreshToken(null);
+    setUser(null);
   };
 
   const value: AuthContextType = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!accessToken,
     isTeacher: user?.role === 'teacher',
     isAdmin: user?.role === 'admin',
     isStudent: user?.role === 'student',
@@ -106,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

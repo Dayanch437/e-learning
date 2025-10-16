@@ -106,7 +106,6 @@ export interface User {
   last_name: string;
   full_name: string;
   phone_number: string;
-  date_of_birth?: string;
   profile_picture?: string;
   role: 'student' | 'teacher' | 'admin';
   is_verified: boolean;

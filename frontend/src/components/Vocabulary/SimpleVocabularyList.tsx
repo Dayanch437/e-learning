@@ -15,9 +15,9 @@ const SimpleVocabularyList: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [searchText, setSearchText] = useState('');
   const [advancedSearchText, setAdvancedSearchText] = useState('');
-  const [levelFilter, setLevelFilter] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [partOfSpeechFilter, setPartOfSpeechFilter] = useState<string>('');
+  const [levelFilter, setLevelFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [partOfSpeechFilter, setPartOfSpeechFilter] = useState('');
   const [startsWithFilter, setStartsWithFilter] = useState('');
   const [searchMode, setSearchMode] = useState<'basic'|'advanced'>('basic');
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,15 +40,56 @@ const SimpleVocabularyList: React.FC = () => {
       func();
     }, DEBOUNCE_DELAY);
   }, []);
+
+  useEffect(() => {
+    fetchWords();
+    fetchStats();
+  }, []);
   
-  const fetchWords = useCallback(async () => {
+  // Effect for debouncing basic search
+  useEffect(() => {
+    if (searchText !== debouncedSearchText) {
+      debounceSearch(() => {
+        setDebouncedSearchText(searchText);
+        if (searchMode === 'basic') {
+          fetchWords();
+        }
+      });
+    }
+  }, [searchText, debounceSearch, searchMode]);
+  
+  // Effect for debouncing advanced search
+  useEffect(() => {
+    if (advancedSearchText !== debouncedAdvancedSearchText) {
+      debounceSearch(() => {
+        setDebouncedAdvancedSearchText(advancedSearchText);
+        if (searchMode === 'advanced') {
+          fetchWords();
+        }
+      });
+    }
+  }, [advancedSearchText, debounceSearch, searchMode]);
+  
+  // Effect for debouncing "starts with" filter
+  useEffect(() => {
+    if (startsWithFilter !== debouncedStartsWithFilter) {
+      debounceSearch(() => {
+        setDebouncedStartsWithFilter(startsWithFilter);
+        if (searchMode === 'advanced') {
+          fetchWords();
+        }
+      });
+    }
+  }, [startsWithFilter, debounceSearch, searchMode]);
+
+  const fetchWords = async () => {
     setLoading(true);
     try {
       let response;
       
       if (searchMode === 'basic') {
         const params: any = {};
-        if (debouncedSearchText) params.search = debouncedSearchText;
+        if (searchText) params.search = searchText;
         if (levelFilter) params.level = levelFilter;
         if (categoryFilter) params.category = categoryFilter;
         
@@ -56,13 +97,13 @@ const SimpleVocabularyList: React.FC = () => {
       } else {
         // Use advanced search
         response = await vocabularyAPI.searchAdvanced(
-          debouncedAdvancedSearchText,
+          advancedSearchText,
           partOfSpeechFilter,
-          debouncedStartsWithFilter
+          startsWithFilter
         );
         
         // Store the search query for display
-        setSearchQuery(debouncedAdvancedSearchText);
+        setSearchQuery(advancedSearchText);
       }
       
       const data = response.data;
@@ -80,9 +121,7 @@ const SimpleVocabularyList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchMode, debouncedSearchText, debouncedAdvancedSearchText, debouncedStartsWithFilter, 
-    levelFilter, categoryFilter, partOfSpeechFilter]);
+  };
 
   const fetchStats = async () => {
     try {
@@ -92,51 +131,6 @@ const SimpleVocabularyList: React.FC = () => {
       console.error('Failed to fetch stats:', error);
     }
   };
-
-  useEffect(() => {
-    fetchWords();
-    fetchStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchWords]);
-  
-  // Effect for debouncing basic search
-  useEffect(() => {
-    if (searchText !== debouncedSearchText) {
-      debounceSearch(() => {
-        setDebouncedSearchText(searchText);
-        if (searchMode === 'basic') {
-          fetchWords();
-        }
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchText, debounceSearch, searchMode]);
-  
-  // Effect for debouncing advanced search
-  useEffect(() => {
-    if (advancedSearchText !== debouncedAdvancedSearchText) {
-      debounceSearch(() => {
-        setDebouncedAdvancedSearchText(advancedSearchText);
-        if (searchMode === 'advanced') {
-          fetchWords();
-        }
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [advancedSearchText, debounceSearch, searchMode]);
-  
-  // Effect for debouncing "starts with" filter
-  useEffect(() => {
-    if (startsWithFilter !== debouncedStartsWithFilter) {
-      debounceSearch(() => {
-        setDebouncedStartsWithFilter(startsWithFilter);
-        if (searchMode === 'advanced') {
-          fetchWords();
-        }
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startsWithFilter, debounceSearch, searchMode]);
 
   const handleSearch = (value: string) => {
     // Only update the search text - the debounce effect will handle API call

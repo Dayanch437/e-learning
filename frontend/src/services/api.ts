@@ -9,8 +9,8 @@ import {
   StatsResponse 
 } from '../types';
 
-// Base API configuration
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+// Base API configuration - FIXED: Added missing port :8000
+const API_BASE_URL = 'http://192.168.1.110:8000/api/v1';
 
 // Create axios instance
 const api = axios.create({

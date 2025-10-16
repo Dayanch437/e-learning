@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ConfigProvider } from 'antd';
 import { AuthProvider } from './contexts/AuthContext';
 import { ResponsiveProvider } from './components/Utils/ResponsiveProvider';
-import { LanguageProvider } from './contexts/LanguageContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
@@ -30,9 +29,8 @@ const App: React.FC = () => {
       }}
     >
       <ResponsiveProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <Router>
+        <AuthProvider>
+          <Router>
             <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -62,8 +60,7 @@ const App: React.FC = () => {
             </Route>
           </Routes>
           </Router>
-          </AuthProvider>
-        </LanguageProvider>
+        </AuthProvider>
       </ResponsiveProvider>
     </ConfigProvider>
   );
