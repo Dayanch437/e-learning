@@ -178,3 +178,35 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
                 {"error": "Chat session not found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+    
+    @extend_schema(
+        request={"type": "object", "properties": {"message": {"type": "string"}}},
+        responses={200: {"type": "object", "properties": {"response": {"type": "string"}}}},
+        description="Simple chat without sessions - just send a message and get a response.",
+        methods=["POST"],
+    )
+    @action(detail=False, methods=['post'], url_path='simple-chat', permission_classes=[])
+    def simple_chat(self, request):
+        """Simple chat without sessions - fast and stateless."""
+        user_message = request.data.get('message', '').strip()
+        
+        if not user_message:
+            return Response(
+                {"error": "Message is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Generate response directly without session
+            ai_response = generate_response(user_message, session=None)
+            
+            return Response({
+                'response': ai_response,
+                'message': user_message,
+                'timestamp': __import__('datetime').datetime.now().isoformat()
+            })
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to generate response: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

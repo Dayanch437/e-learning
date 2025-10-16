@@ -13,7 +13,7 @@ import GrammarDetail from './components/Grammar/SimpleGrammarDetail';
 import VideoList from './components/Videos/SimpleVideoList';
 import VideoDetail from './components/Videos/SimpleVideoDetail';
 import VocabularyList from './components/Vocabulary/SimpleVocabularyList';
-import Chat from './components/Chat/Chat';
+import SimpleChat from './components/Chat/SimpleChat';
 import { CategoryManagement } from './components/Categories';
 import APIConnectionTester from './components/Debug/APIConnectionTester';
 import 'antd/dist/reset.css';
@@ -46,7 +46,7 @@ const App: React.FC = () => {
               <Route path="videos" element={<VideoList />} />
               <Route path="videos/:id" element={<VideoDetail />} />
               <Route path="vocabulary" element={<VocabularyList />} />
-              <Route path="chat" element={<Chat />} />
+              <Route path="chat" element={<SimpleChat />} />
               <Route path="categories" element={
                 <ProtectedRoute requiredRole="admin">
                   <CategoryManagement />
