@@ -38,6 +38,28 @@ interface ChatResponse {
   learning_focus: 'general' | 'grammar' | 'vocabulary' | 'conversation' | 'reading' | 'writing' | 'pronunciation' | 'exam';
 }
 
+interface SessionStats {
+  total_sessions: number;
+  total_messages: number;
+  average_messages_per_session: number;
+  sessions_by_level: { [key: string]: number };
+  sessions_by_focus: { [key: string]: number };
+  recent_sessions: Array<{
+    id: number;
+    title: string;
+    proficiency_level: string;
+    learning_focus: string;
+    message_count: number;
+    updated_at: string;
+    created_at: string;
+  }>;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
+}
+
 // Chat API Service
 const chatAPI = {
   // Get all chat sessions for current user
@@ -83,6 +105,11 @@ const chatAPI = {
       proficiency_level,
       learning_focus
     });
+  },
+
+  // Get session statistics for the current user
+  getSessionStats: () => {
+    return api.get<SessionStats>('/chat/sessions/stats/');
   }
 };
 
