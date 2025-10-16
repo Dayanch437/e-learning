@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Input, Button, List, Avatar, Spin, Select, Tabs, Tooltip, message, Divider, Dropdown, Menu, Badge } from 'antd';
+import { Card, Input, Button, List, Avatar, Spin, Select, Tooltip, message, Divider, Dropdown, Menu, Badge } from 'antd';
 import { 
   SendOutlined, RobotOutlined, UserOutlined, PlusOutlined, 
   DeleteOutlined, EditOutlined, MenuOutlined, SettingOutlined,
@@ -29,10 +29,9 @@ interface ChatSession {
   messages?: ChatMessage[];
 }
 
-const { TabPane } = Tabs;
 const { Option } = Select;
 
-const Chat: React.FC = () => {
+const Chat = (): React.ReactElement => {
   const { user } = useAuth();
   const { isMobile } = useResponsive();
   const { t } = useLanguage();
@@ -47,9 +46,6 @@ const Chat: React.FC = () => {
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editTitleValue, setEditTitleValue] = useState('');
   const [mobileSidebarVisible, setMobileSidebarVisible] = useState(false);
-  const [chatLogVisible, setChatLogVisible] = useState(false);
-  
-  // Chat log visibility state
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -76,17 +72,19 @@ const Chat: React.FC = () => {
     try {
       setInitialLoading(true);
       const response = await chatAPI.getSessions();
-      // Handle both direct data and response.data format
       const sessionData = Array.isArray(response) ? response : 
                           (response.data && Array.isArray(response.data)) ? response.data : [];
       setSessions(sessionData);
       
-      // Set first session as active if available
-      if (sessionData.length > 0) {
+      // Only set first session as active if no session is currently active
+      if (sessionData.length > 0 && !activeSessionId) {
         const firstSession = sessionData[0];
         setActiveSessionId(firstSession.id);
         setProficiencyLevel(firstSession.proficiency_level);
         setLearningFocus(firstSession.learning_focus);
+      } else if (sessionData.length === 0) {
+        setActiveSessionId(null);
+        setMessages([]);
       }
       setInitialLoading(false);
     } catch (error) {
@@ -96,7 +94,6 @@ const Chat: React.FC = () => {
     }
   };
 
-  // Helper function to check if an error is related to API usage limits
   const isApiLimitError = (error: any): boolean => {
     const errorMessage = error?.response?.data?.detail || 
                         error?.response?.data?.message || 
@@ -107,8 +104,7 @@ const Chat: React.FC = () => {
            errorMessage.toLowerCase().includes('quota') || 
            errorMessage.toLowerCase().includes('limit');
   };
-  
-  // Helper function to display appropriate error message
+
   const handleApiError = (error: any, defaultMessage: string) => {
     console.error(defaultMessage, error);
     
@@ -123,6 +119,20 @@ const Chat: React.FC = () => {
     }
   };
 
+  const handleSessionClick = (sessionId: number) => {
+    setActiveSessionId(sessionId);
+    
+    const selectedSession = sessions.find(s => s.id === sessionId);
+    if (selectedSession) {
+      setProficiencyLevel(selectedSession.proficiency_level);
+      setLearningFocus(selectedSession.learning_focus);
+    }
+    
+    if (isMobile) {
+      setMobileSidebarVisible(false);
+    }
+  };
+
   const loadMessages = async (sessionId: number) => {
     try {
       const session = sessions.find(s => s.id === sessionId);
@@ -132,7 +142,6 @@ const Chat: React.FC = () => {
       }
       
       const response = await chatAPI.getMessages(sessionId);
-      // Handle both direct data and response.data format
       const messageData = Array.isArray(response) ? response :
                          (response.data && Array.isArray(response.data)) ? response.data : [];
       setMessages(messageData);
@@ -145,44 +154,48 @@ const Chat: React.FC = () => {
     if (!inputValue.trim()) return;
     
     setLoading(true);
+    const currentInput = inputValue;
+    setInputValue('');
+    
     try {
-      // Create temporary message for UI
+      // Add user message immediately to UI
       const tempUserMessage: ChatMessage = {
-        id: `temp-${Date.now()}`,
+        id: `temp-user-${Date.now()}`,
         role: 'user',
-        content: inputValue,
+        content: currentInput,
         created_at: new Date().toISOString(),
       };
       
-      // Update UI immediately
       setMessages((prevMessages) => Array.isArray(prevMessages) ? [...prevMessages, tempUserMessage] : [tempUserMessage]);
-      setInputValue('');
       
-      // Send to API
+      // Send message to API
       const response = await chatAPI.sendMessage(
-        inputValue, 
+        currentInput, 
         activeSessionId !== null ? activeSessionId : undefined,
         proficiencyLevel,
         learningFocus
       );
       
-      // Handle both direct data and response.data format safely with type assertions
       const responseData = response.data ? response.data : response;
       
-      // Extract session_id safely with type checking
+      // Extract session ID and AI response
       let sessionId = null;
+      let aiResponse = '';
+      let messageId = null;
+      
       if ('session_id' in responseData) {
         sessionId = (responseData as any).session_id;
-      } else if (responseData && 'data' in responseData && (responseData as any).data && 
-                'session_id' in (responseData as any).data) {
-        sessionId = (responseData as any).data.session_id;
+      }
+      if ('response' in responseData) {
+        aiResponse = (responseData as any).response;
+      }
+      if ('message_id' in responseData) {
+        messageId = (responseData as any).message_id;
       }
       
+      // If this is a new session, update the session list and set active session
       if (!activeSessionId && sessionId) {
-        // This was a new session
         setActiveSessionId(sessionId);
-        
-        // Refresh session list
         const sessionsResponse = await chatAPI.getSessions();
         const sessionData = Array.isArray(sessionsResponse) ? sessionsResponse : 
                            (sessionsResponse.data && Array.isArray(sessionsResponse.data)) ? 
@@ -190,12 +203,23 @@ const Chat: React.FC = () => {
         setSessions(sessionData);
       }
       
-      // Load the latest messages to get server-generated IDs
-      if (sessionId) {
-        loadMessages(sessionId);
+      // Add AI response immediately to UI
+      if (aiResponse) {
+        const aiMessage: ChatMessage = {
+          id: messageId || `temp-ai-${Date.now()}`,
+          role: 'assistant',
+          content: aiResponse,
+          created_at: new Date().toISOString(),
+        };
+        
+        setMessages((prevMessages) => Array.isArray(prevMessages) ? [...prevMessages, aiMessage] : [aiMessage]);
       }
+      
     } catch (error: any) {
       console.error('Failed to send message', error);
+      
+      // Restore input value on error
+      setInputValue(currentInput);
       
       if (isApiLimitError(error)) {
         message.error({
@@ -204,7 +228,6 @@ const Chat: React.FC = () => {
           style: { marginTop: '20px' }
         });
         
-        // Add a system message to inform the user in the chat
         const systemMessage: ChatMessage = {
           id: `system-${Date.now()}`,
           role: 'assistant',
@@ -228,10 +251,7 @@ const Chat: React.FC = () => {
         learning_focus: learningFocus
       });
       
-      // Handle both direct data and response.data format with type safety
       const sessionData = response.data ? response.data : response;
-      
-      // Type assertion to resolve the TypeScript error
       const safeSessionData = sessionData as ChatSession;
       
       setSessions(Array.isArray(sessions) ? [...sessions, safeSessionData] : [safeSessionData]);
@@ -244,11 +264,8 @@ const Chat: React.FC = () => {
   const deleteSession = async (sessionId: number) => {
     try {
       await chatAPI.deleteSession(sessionId);
-      
-      // Update session list
       setSessions(sessions.filter(s => s.id !== sessionId));
       
-      // If the active session was deleted, set active to null or another session
       if (activeSessionId === sessionId) {
         const remainingSessions = sessions.filter(s => s.id !== sessionId);
         setActiveSessionId(remainingSessions.length > 0 ? remainingSessions[0].id : null);
@@ -266,23 +283,16 @@ const Chat: React.FC = () => {
   };
 
   const updateSessionTitle = async () => {
-    if (!editTitleValue.trim()) {
+    if (!editingSessionId || !editTitleValue.trim()) {
       setEditingSessionId(null);
       return;
     }
-    
+
     try {
-      if (editingSessionId !== null) {
-        await chatAPI.updateSession(editingSessionId, { 
-          title: editTitleValue 
-        });
-      }
+      await chatAPI.updateSession(editingSessionId, { title: editTitleValue.trim() });
       
-      // Update local state
       setSessions(Array.isArray(sessions) ? sessions.map(s => 
-        s.id === editingSessionId 
-          ? { ...s, title: editTitleValue } 
-          : s
+        s.id === editingSessionId ? { ...s, title: editTitleValue.trim() } : s
       ) : []);
       
       setEditingSessionId(null);
@@ -302,7 +312,6 @@ const Chat: React.FC = () => {
         learning_focus: learningFocus
       });
       
-      // Update local state
       setSessions(Array.isArray(sessions) ? sessions.map(s => 
         s.id === activeSessionId 
           ? { ...s, proficiency_level: proficiencyLevel, learning_focus: learningFocus } 
@@ -318,19 +327,6 @@ const Chat: React.FC = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Quick prompt templates
-  const quickPrompts = [
-    { title: "Grammar Exercise", prompt: "Create a grammar exercise for my level" },
-    { title: "Vocabulary Practice", prompt: "Give me a vocabulary exercise to practice" },
-    { title: "Conversation", prompt: "Let's practice conversation in English" },
-    { title: "Pronunciation", prompt: "Help me improve my pronunciation" },
-    { title: "Writing Exercise", prompt: "Give me a writing exercise to practice" }
-  ];
-
-  const applyQuickPrompt = (prompt: string) => {
-    setInputValue(prompt);
   };
 
   if (initialLoading) {
@@ -352,6 +348,7 @@ const Chat: React.FC = () => {
           onClick={() => setMobileSidebarVisible(!mobileSidebarVisible)}
         />
       )}
+      
       <div className={`chat-sidebar ${isMobile && mobileSidebarVisible ? 'visible' : ''}`}
            style={{ display: isMobile ? (mobileSidebarVisible ? 'flex' : 'none') : 'flex' }}>
         <div className="sessions-header">
@@ -373,9 +370,9 @@ const Chat: React.FC = () => {
           renderItem={session => (
             <List.Item
               className={`session-item ${activeSessionId === session.id ? 'active' : ''}`}
-              onClick={() => setActiveSessionId(session.id)}
+              onClick={() => handleSessionClick(session.id)}
               actions={[
-                <Tooltip title="Edit Title">
+                <Tooltip title="Edit Title" key="edit">
                   <Button 
                     type="text" 
                     size="small" 
@@ -386,7 +383,7 @@ const Chat: React.FC = () => {
                     }}
                   />
                 </Tooltip>,
-                <Tooltip title="Delete Session">
+                <Tooltip title="Delete Session" key="delete">
                   <Button 
                     type="text" 
                     danger
@@ -433,77 +430,6 @@ const Chat: React.FC = () => {
           </div>
         ) : (
           <>
-            {!isMobile && (
-              <Card className="chat-settings">
-                <div className="settings-row">
-                  <div className="setting-item">
-                    <label>Proficiency Level:</label>
-                    <Select
-                      value={proficiencyLevel}
-                      onChange={(value) => setProficiencyLevel(value)}
-                      style={{ width: 140 }}
-                    >
-                      <Option value="beginner">Beginner</Option>
-                      <Option value="intermediate">Intermediate</Option>
-                      <Option value="advanced">Advanced</Option>
-                    </Select>
-                  </div>
-                  <div className="setting-item">
-                    <label>Learning Focus:</label>
-                    <Select
-                      value={learningFocus}
-                      onChange={(value) => setLearningFocus(value)}
-                      style={{ width: 140 }}
-                    >
-                      <Option value="general">General English</Option>
-                      <Option value="grammar">Grammar</Option>
-                      <Option value="vocabulary">Vocabulary</Option>
-                      <Option value="conversation">Conversation</Option>
-                      <Option value="reading">Reading</Option>
-                      <Option value="writing">Writing</Option>
-                      <Option value="pronunciation">Pronunciation</Option>
-                      <Option value="exam">Exam Prep</Option>
-                    </Select>
-                  </div>
-                  <Button type="primary" onClick={updateSessionSettings}>
-                    Apply Settings
-                  </Button>
-                </div>
-                <Divider style={{ margin: '12px 0' }} />
-                <div className="quick-prompts">
-                  {quickPrompts.map((item, index) => (
-                    <Button 
-                      key={index} 
-                      size="small"
-                      onClick={() => applyQuickPrompt(item.prompt)}
-                    >
-                      {item.title}
-                    </Button>
-                  ))}
-                </div>
-              </Card>
-            )}
-            
-            {isMobile && activeSessionId && (
-              <div style={{ 
-                padding: '8px 12px', 
-                backgroundColor: '#f0f7ff', 
-                borderBottom: '1px solid #d9e8f6',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <strong>
-                    {sessions.find(s => s.id === activeSessionId)?.title || 'Chat'}
-                  </strong>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
-                    <span>{proficiencyLevel}</span> • <span>{learningFocus}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          
             <div className="messages-container">
               {messages.length > 0 ? (
                 <List
@@ -511,7 +437,7 @@ const Chat: React.FC = () => {
                   itemLayout="horizontal"
                   dataSource={Array.isArray(messages) ? messages : []}
                   renderItem={message => (
-                    <List.Item className={`message ${message.role}`}>
+                    <List.Item className={`message ${message.role}`} key={message.id}>
                       <List.Item.Meta
                         avatar={
                           message.role === 'assistant' ? 
@@ -560,83 +486,6 @@ const Chat: React.FC = () => {
                 style={{ flex: 1 }}
               />
               <div className="chat-controls">
-                <Dropdown 
-                  overlay={
-                    <Menu className="chat-dropdown-menu">
-                      <Menu.ItemGroup title="Settings">
-                        <Menu.Item key="settings-proficiency">
-                          <div className="setting-item">
-                            <label>Proficiency:</label>
-                            <Select
-                              value={proficiencyLevel}
-                              onChange={(value) => setProficiencyLevel(value)}
-                              style={{ width: 120 }}
-                              size="small"
-                            >
-                              <Option value="beginner">Beginner</Option>
-                              <Option value="intermediate">Intermediate</Option>
-                              <Option value="advanced">Advanced</Option>
-                            </Select>
-                          </div>
-                        </Menu.Item>
-                        <Menu.Item key="settings-focus">
-                          <div className="setting-item">
-                            <label>Focus:</label>
-                            <Select
-                              value={learningFocus}
-                              onChange={(value) => setLearningFocus(value)}
-                              style={{ width: 120 }}
-                              size="small"
-                            >
-                              <Option value="general">General</Option>
-                              <Option value="grammar">Grammar</Option>
-                              <Option value="vocabulary">Vocabulary</Option>
-                              <Option value="conversation">Conversation</Option>
-                              <Option value="reading">Reading</Option>
-                              <Option value="writing">Writing</Option>
-                              <Option value="pronunciation">Pronunciation</Option>
-                              <Option value="exam">Exam Prep</Option>
-                            </Select>
-                          </div>
-                        </Menu.Item>
-                        <Menu.Item key="apply-settings">
-                          <Button type="primary" size="small" onClick={updateSessionSettings} block>
-                            Apply Settings
-                          </Button>
-                        </Menu.Item>
-                      </Menu.ItemGroup>
-                      <Menu.Divider />
-                      <Menu.ItemGroup title="Chat Log">
-                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                          {messages.slice(-5).map((msg, index) => (
-                            <Menu.Item key={`log-${index}`}>
-                              <Badge 
-                                color={msg.role === 'assistant' ? '#1890ff' : '#52c41a'} 
-                                text={`${msg.role === 'assistant' ? 'Emma' : 'You'}: ${msg.content.substring(0, 30)}${msg.content.length > 30 ? '...' : ''}`} 
-                              />
-                            </Menu.Item>
-                          ))}
-                        </div>
-                      </Menu.ItemGroup>
-                      {isMobile && (
-                        <>
-                          <Menu.Divider />
-                          <Menu.Item key="show-sessions" onClick={() => setMobileSidebarVisible(!mobileSidebarVisible)}>
-                            <HistoryOutlined /> {mobileSidebarVisible ? 'Hide Chat Sessions' : 'Show Chat Sessions'}
-                          </Menu.Item>
-                        </>
-                      )}
-                    </Menu>
-                  }
-                  placement="topRight"
-                  trigger={['click']}
-                >
-                  <Button 
-                    type="text" 
-                    icon={<SettingOutlined />} 
-                    style={{ marginRight: 8 }}
-                  />
-                </Dropdown>
                 <Button 
                   type="primary" 
                   icon={<SendOutlined />} 
