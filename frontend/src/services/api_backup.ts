@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { AuthResponse, User } from '../types';
 
-const API_BASE_URL = 'http://192.168.1.110:8000/api/v1';
+// Base API configuration
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

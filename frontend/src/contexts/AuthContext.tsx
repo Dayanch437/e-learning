@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { API_BASE_URL } from '../host';
 
-// Use environment variable directly - matching the API configuration
-const API_BASE_URL = 'http://192.168.1.110:8000/api/v1';
 
 console.log('🔧 AuthContext Debug:');
 console.log('API_BASE_URL for authentication:', API_BASE_URL);

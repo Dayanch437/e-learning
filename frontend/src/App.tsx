@@ -32,33 +32,36 @@ const App: React.FC = () => {
         <AuthProvider>
           <Router>
             <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="grammar" element={<GrammarList />} />
-              <Route path="grammar/:id" element={<GrammarDetail />} />
-              <Route path="videos" element={<VideoList />} />
-              <Route path="videos/:id" element={<VideoDetail />} />
-              <Route path="vocabulary" element={<VocabularyList />} />
-              <Route path="chat" element={<SimpleChat />} />
-              <Route path="categories" element={
-                <ProtectedRoute requiredRole="admin">
-                  <CategoryManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="api-test" element={
-                <ProtectedRoute requiredRole="admin">
-                  <APIConnectionTester />
-                </ProtectedRoute>
-              } />
-            </Route>
-          </Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/*"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="grammar" element={<GrammarList />} />
+                <Route path="grammar/:id" element={<GrammarDetail />} />
+                <Route path="videos" element={<VideoList />} />
+                <Route path="videos/:id" element={<VideoDetail />} />
+                <Route path="vocabulary" element={<VocabularyList />} />
+                <Route path="chat" element={<SimpleChat />} />
+                <Route path="categories" element={
+                  <ProtectedRoute requiredRole="admin">
+                    <CategoryManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="api-test" element={
+                  <ProtectedRoute requiredRole="admin">
+                    <APIConnectionTester />
+                  </ProtectedRoute>
+                } />
+              </Route>
+            </Routes>
           </Router>
         </AuthProvider>
       </ResponsiveProvider>

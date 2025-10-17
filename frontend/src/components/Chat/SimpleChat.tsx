@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, Input, Button, List, Avatar, Spin, message } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
-
-const API_BASE_URL = 'http://192.168.1.110:8000/api/v1';
+import { API_BASE_URL } from '../../host';
 
 interface ChatMessage {
   id: string;
@@ -13,7 +12,7 @@ interface ChatMessage {
 }
 
 const SimpleChat: React.FC = () => {
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,12 +44,13 @@ const SimpleChat: React.FC = () => {
 
     try {
       console.log('🤖 Sending message to:', `${API_BASE_URL}/chat/sessions/simple-chat/`);
+      console.log('🔑 Using token:', accessToken ? 'Token present' : 'No token!');
       
       const response = await fetch(`${API_BASE_URL}/chat/sessions/simple-chat/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           message: currentInput,
@@ -58,7 +58,14 @@ const SimpleChat: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response from AI');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.detail || errorData.message || `Error: ${response.status} ${response.statusText}`;
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -75,13 +82,13 @@ const SimpleChat: React.FC = () => {
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error: any) {
       console.error('❌ Chat error:', error);
-      message.error('Failed to send message. Please try again.');
+      message.error(error.message || 'Failed to send message. Please try again.');
       
       // Add error message to UI
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: `Error: ${error.message || 'Sorry, I encountered an error. Please try again.'}`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);

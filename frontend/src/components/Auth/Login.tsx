@@ -2,13 +2,9 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Typography, Alert, Divider, Checkbox } from 'antd';
 import { LockOutlined, EyeInvisibleOutlined, EyeTwoTone, MailOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
-const API_BASE_URL = 'http://192.168.1.110:8000/api/v1'; // change if needed
 const { Title, Text } = Typography;
-
-// Add unique console message to verify changes are loaded
-console.log('🚀 LOGIN COMPONENT LOADED - Fixed API URL:', API_BASE_URL);
-console.log('🔍 Current timestamp:', new Date().toISOString());
 
 interface LoginForm {
   email: string;
@@ -19,6 +15,7 @@ interface LoginForm {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,55 +26,14 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      console.log('� Login Debug Info:');
-      console.log('API_BASE_URL:', API_BASE_URL);
-      console.log('�🔐 Logging in via:', `${API_BASE_URL}/auth/login/`);
-      console.log('📧 Email:', values.email);
+      console.log('🔐 Logging in with email:', values.email);
       
-      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-        }),
-      });
-
-      console.log('📡 Response status:', response.status);
-
-      // Check if response is 200 OK
-      if (response.status === 200 || response.ok) {
-        const data = await response.json();
-        console.log('✅ Login successful (200 OK):', data);
-
-        // Save all authentication data to localStorage
-        if (data?.access) {
-          localStorage.setItem('access_token', data.access);
-          localStorage.setItem('accessToken', data.access);
-          console.log('💾 Access token saved');
-        }
-        
-        if (data?.refresh) {
-          localStorage.setItem('refresh_token', data.refresh);
-          localStorage.setItem('refreshToken', data.refresh);
-          console.log('💾 Refresh token saved');
-        }
-        
-        if (data?.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          console.log('💾 User data saved:', data.user);
-        }
-
-        console.log('🎯 Navigating to dashboard...');
-        // Navigate to dashboard on successful login (200 response)
-        navigate('/dashboard', { replace: true });
-      } else {
-        // If response is not OK, throw error
-        const errData = await response.json();
-        throw new Error(errData?.detail || 'Invalid credentials');
-      }
+      // Use AuthContext's login method which updates the state properly
+      await login(values.email, values.password);
+      
+      console.log('✅ Login successful, navigating to:', from);
+      // Navigate to dashboard on successful login
+      navigate(from, { replace: true });
     } catch (error: any) {
       console.error('❌ Login failed:', error);
       setError(error.message || 'Login failed. Please check your credentials.');
