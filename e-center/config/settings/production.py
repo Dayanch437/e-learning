@@ -17,11 +17,7 @@ except ImportError:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config(
-    'ALLOWED_HOSTS', 
-    default='', 
-    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
-)
+ALLOWED_HOSTS = ["*"]
 
 # Database Configuration for Production
 # Uses PostgreSQL - a robust, scalable database for production environments
@@ -30,28 +26,9 @@ ALLOWED_HOSTS = config(
 # PostgreSQL Configuration (Required for Production)
 # DATABASE_URL format: postgres://username:password@host:port/database_name
 # Example: postgres://myuser:mypass@localhost:5432/mydatabase
-DATABASES = {
-    'default': dj_database_url.parse(
-        config('DATABASE_URL'),  # This MUST be set in production environment
-        conn_max_age=60,  # Connection pooling - keeps connections alive for 60 seconds
-    )
-}
 
-# Ensure PostgreSQL is being used in production
-if 'postgresql' not in DATABASES['default']['ENGINE'] and 'postgres' not in DATABASES['default']['ENGINE']:
-    raise Exception(
-        "Production environment must use PostgreSQL database. "
-        "Please set DATABASE_URL environment variable with PostgreSQL connection string."
-    )
 
-# PostgreSQL-specific optimizations
-DATABASES['default']['OPTIONS'] = {
-    # Connection pool settings
-    'MAX_CONNS': 20,
-    'MIN_CONNS': 5,
-    # Enable SSL in production (recommended)
-    # 'sslmode': 'require',
-}
+
 
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True

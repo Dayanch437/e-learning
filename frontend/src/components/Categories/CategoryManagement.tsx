@@ -9,15 +9,21 @@ import {
   Popconfirm, 
   message, 
   Card, 
-  Typography
+  Typography,
+  Grid
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FolderOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { categoryAPI } from '../../services/api';
 import { Category } from '../../types';
 
 const { Title } = Typography;
+const { useBreakpoint } = Grid;
 
 const CategoryManagement: React.FC = () => {
+  const { t } = useTranslation();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -30,7 +36,7 @@ const CategoryManagement: React.FC = () => {
       const response = await categoryAPI.getAll();
       setCategories(response.data.results || response.data);
     } catch (error: any) {
-      message.error('Failed to fetch categories');
+      message.error(t('categories.failedToFetch'));
       console.error('Error fetching categories:', error);
     } finally {
       setLoading(false);
@@ -56,10 +62,10 @@ const CategoryManagement: React.FC = () => {
   const handleDelete = async (id: number) => {
     try {
       await categoryAPI.delete(id);
-      message.success('Category deleted successfully');
+      message.success(t('categories.deleteSuccess'));
       fetchCategories();
     } catch (error: any) {
-      message.error('Failed to delete category');
+      message.error(t('categories.deleteFailed'));
       console.error('Error deleting category:', error);
     }
   };
@@ -68,16 +74,16 @@ const CategoryManagement: React.FC = () => {
     try {
       if (editingCategory) {
         await categoryAPI.update(editingCategory.id, values);
-        message.success('Category updated successfully');
+        message.success(t('categories.updateSuccess'));
       } else {
         await categoryAPI.create(values);
-        message.success('Category created successfully');
+        message.success(t('categories.createSuccess'));
       }
       setModalVisible(false);
       form.resetFields();
       fetchCategories();
     } catch (error: any) {
-      message.error(`Failed to ${editingCategory ? 'update' : 'create'} category`);
+      message.error(t(editingCategory ? 'categories.updateFailed' : 'categories.createFailed'));
       console.error('Error saving category:', error);
     }
   };
@@ -87,57 +93,57 @@ const CategoryManagement: React.FC = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: isMobile ? 50 : 80,
     },
     {
-      title: 'Name',
+      title: t('categories.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string) => (
         <Space>
           <FolderOutlined style={{ color: '#1890ff' }} />
-          <strong>{text}</strong>
+          <strong style={{ fontSize: isMobile ? '13px' : '14px' }}>{text}</strong>
         </Space>
       ),
     },
     {
-      title: 'Created Date',
+      title: t('categories.createdDate'),
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => <span style={{ fontSize: isMobile ? '12px' : '14px' }}>{new Date(date).toLocaleDateString()}</span>,
     },
     {
-      title: 'Updated Date',
+      title: t('categories.updatedDate'),
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => <span style={{ fontSize: isMobile ? '12px' : '14px' }}>{new Date(date).toLocaleDateString()}</span>,
     },
     {
-      title: 'Actions',
+      title: t('categories.actions'),
       key: 'actions',
       render: (_: any, record: Category) => (
         <Space>
           <Button
             type="primary"
-            size="small"
+            size={isMobile ? 'small' : 'middle'}
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
-            Edit
+            {!isMobile && t('common.edit')}
           </Button>
           <Popconfirm
-            title="Are you sure you want to delete this category?"
+            title={t('categories.deleteConfirm')}
             onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
+            okText={t('common.yes')}
+            cancelText={t('common.no')}
           >
             <Button
               type="primary"
               danger
-              size="small"
+              size={isMobile ? 'small' : 'middle'}
               icon={<DeleteOutlined />}
             >
-              Delete
+              {!isMobile && t('common.delete')}
             </Button>
           </Popconfirm>
         </Space>
@@ -146,38 +152,49 @@ const CategoryManagement: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: isMobile ? '12px' : '24px' }}>
       <Card>
-        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={2} style={{ margin: 0 }}>
+        <div style={{ 
+          marginBottom: '16px', 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between', 
+          alignItems: isMobile ? 'flex-start' : 'center',
+          gap: isMobile ? '12px' : '0'
+        }}>
+          <Title level={isMobile ? 3 : 2} style={{ margin: 0 }}>
             <FolderOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
-            Category Management
+            {t('categories.management')}
           </Title>
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={handleCreate}
+            size={isMobile ? 'middle' : 'large'}
           >
-            Add New Category
+            {t('categories.addNew')}
           </Button>
         </div>
 
         <Table
-          columns={columns}
+          columns={isMobile ? columns.filter(col => col.key !== 'updated_at') : columns}
           dataSource={categories}
           rowKey="id"
           loading={loading}
+          size={isMobile ? 'small' : 'middle'}
+          scroll={isMobile ? { x: true } : undefined}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showQuickJumper: true,
+            showQuickJumper: !isMobile,
+            size: isMobile ? 'small' : 'default',
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} categories`,
+              `${range[0]}-${range[1]} ${t('video.of')} ${total} ${t('categories.categories')}`,
           }}
         />
 
         <Modal
-          title={editingCategory ? 'Edit Category' : 'Create New Category'}
+          title={editingCategory ? t('categories.editCategory') : t('categories.createNew')}
           open={modalVisible}
           onCancel={() => {
             setModalVisible(false);
@@ -194,26 +211,27 @@ const CategoryManagement: React.FC = () => {
           >
             <Form.Item
               name="name"
-              label="Category Name"
+              label={t('categories.categoryName')}
               rules={[
-                { required: true, message: 'Please enter category name!' },
-                { min: 2, message: 'Category name must be at least 2 characters!' },
-                { max: 100, message: 'Category name must be less than 100 characters!' }
+                { required: true, message: t('categories.enterName') },
+                { min: 2, message: t('categories.nameMinLength') },
+                { max: 100, message: t('categories.nameMaxLength') }
               ]}
             >
               <Input
-                placeholder="Enter category name"
+                placeholder={t('categories.enterNamePlaceholder')}
                 prefix={<FolderOutlined />}
+                size={isMobile ? 'middle' : 'large'}
               />
             </Form.Item>
 
             <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
               <Space>
-                <Button onClick={() => setModalVisible(false)}>
-                  Cancel
+                <Button onClick={() => setModalVisible(false)} size={isMobile ? 'middle' : 'large'}>
+                  {t('common.cancel')}
                 </Button>
-                <Button type="primary" htmlType="submit">
-                  {editingCategory ? 'Update' : 'Create'}
+                <Button type="primary" htmlType="submit" size={isMobile ? 'middle' : 'large'}>
+                  {editingCategory ? t('common.edit') : t('common.add')}
                 </Button>
               </Space>
             </Form.Item>

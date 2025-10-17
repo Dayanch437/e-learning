@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Card, Row, Col, Statistic, Input, Select, Tag, Button, Space, Slider } from 'antd';
+import { Table, Card, Row, Col, Statistic, Input, Select, Tag, Button, Space, Slider, Grid } from 'antd';
 import { BookOutlined, EyeOutlined, FilterOutlined, ClearOutlined, SearchOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { grammarAPI, categoryAPI } from '../../services/api';
 import { GrammarLesson, Category } from '../../types';
 
 const { Search } = Input;
 const { Option } = Select;
+const { useBreakpoint } = Grid;
 
 const SimpleGrammarList: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [grammar, setGrammar] = useState<GrammarLesson[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
@@ -102,7 +107,7 @@ const SimpleGrammarList: React.FC = () => {
 
   const columns = [
     {
-      title: 'Lesson',
+      title: t('grammar.lesson'),
       dataIndex: 'title',
       key: 'title',
       sorter: true,
@@ -121,7 +126,7 @@ const SimpleGrammarList: React.FC = () => {
         
         return (
           <div>
-            <div style={{ fontWeight: 500, marginBottom: 8, fontSize: '16px' }}>
+            <div style={{ fontWeight: 500, marginBottom: 8, fontSize: isMobile ? '14px' : '16px' }}>
               {text}
             </div>
             <Space>
@@ -146,7 +151,7 @@ const SimpleGrammarList: React.FC = () => {
                   padding: '1px 6px'
                 }}
               >
-                {record.status === 'published' ? '✅ Published' : '📝 Draft'}
+                {record.status === 'published' ? `✅ ${t('dashboard.published')}` : `📝 ${t('dashboard.draft')}`}
               </Tag>
             </Space>
           </div>
@@ -154,29 +159,29 @@ const SimpleGrammarList: React.FC = () => {
       },
     },
     {
-      title: 'Duration',
+      title: t('grammar.duration'),
       dataIndex: 'estimated_duration',
       key: 'duration',
       sorter: true,
-      width: 100,
+      width: isMobile ? 80 : 100,
       render: (duration: number) => (
         <Tag color="purple" style={{ borderRadius: '8px' }}>
-          ⏱️ {duration} min
+          ⏱️ {duration} {t('grammar.min')}
         </Tag>
       ),
     },
     {
-      title: 'Content Preview',
+      title: t('grammar.contentPreview'),
       dataIndex: 'content',
       key: 'content',
-      width: 300,
+      width: isMobile ? 200 : 300,
       render: (content: string) => (
         <div style={{ 
           maxHeight: '60px', 
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           color: '#666',
-          fontSize: '13px',
+          fontSize: isMobile ? '12px' : '13px',
           lineHeight: '1.4'
         }}>
           {content?.substring(0, 120)}
@@ -185,11 +190,11 @@ const SimpleGrammarList: React.FC = () => {
       ),
     },
     {
-      title: 'Created',
+      title: t('grammar.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       sorter: true,
-      width: 120,
+      width: isMobile ? 100 : 120,
       render: (date: string) => (
         <div style={{ fontSize: '12px', color: '#666' }}>
           {new Date(date).toLocaleDateString()}
@@ -197,44 +202,45 @@ const SimpleGrammarList: React.FC = () => {
       ),
     },
     {
-      title: 'Action',
+      title: t('grammar.action'),
       key: 'action',
-      width: 150,
+      width: isMobile ? 100 : 150,
       render: (_: any, record: GrammarLesson) => (
         <Button
           type="primary"
-          icon={<EyeOutlined />}
+          icon={!isMobile && <EyeOutlined />}
           onClick={() => navigate(`/grammar/${record.id}`)}
-          style={{ borderRadius: '6px' }}
+          style={{ borderRadius: '6px', fontSize: isMobile ? '12px' : '14px' }}
+          size={isMobile ? 'small' : 'middle'}
         >
-          View Details
+          {isMobile ? t('grammar.view') : t('grammar.viewDetails')}
         </Button>
       ),
     },
   ];
 
   return (
-    <div>
-      <h1>Grammar Lessons</h1>
+    <div style={{ padding: isMobile ? '12px' : '24px' }}>
+      <h1 style={{ fontSize: isMobile ? '20px' : '28px', marginBottom: '16px' }}>{t('grammar.title')}</h1>
       
       {/* Category Filter Section */}
       {categories.length > 0 && (
         <Card style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 12 }}>
-            <strong>📚 Browse by Category:</strong>
+          <div style={{ marginBottom: 12, fontSize: isMobile ? '13px' : '14px' }}>
+            <strong>📚 {t('grammar.browseByCategory')}:</strong>
           </div>
           <Space wrap>
             <Tag 
               color={!categoryFilter ? 'blue' : 'default'}
               style={{ 
                 cursor: 'pointer',
-                fontSize: '12px',
+                fontSize: isMobile ? '11px' : '12px',
                 padding: '4px 8px',
                 borderRadius: '12px'
               }}
               onClick={() => setCategoryFilter('')}
             >
-              All Categories
+              {t('grammar.allCategories')}
             </Tag>
             {categories.map(category => {
               const getCategoryColor = (categoryName: string) => {
@@ -272,56 +278,71 @@ const SimpleGrammarList: React.FC = () => {
 
       {/* Advanced Filters */}
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0 }}>🔍 Search & Filters</h3>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between', 
+          alignItems: isMobile ? 'flex-start' : 'center', 
+          marginBottom: 16,
+          gap: isMobile ? '12px' : '0'
+        }}>
+          <h3 style={{ margin: 0, fontSize: isMobile ? '16px' : '18px' }}>🔍 {t('grammar.searchAndFilters')}</h3>
           <Space>
             <Button 
               icon={<FilterOutlined />}
               onClick={() => setShowFilters(!showFilters)}
+              size={isMobile ? 'small' : 'middle'}
             >
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
+              {showFilters ? t('grammar.hideFilters') : t('grammar.showFilters')}
             </Button>
             <Button 
               icon={<ClearOutlined />}
               onClick={clearFilters}
+              size={isMobile ? 'small' : 'middle'}
             >
-              Clear All
+              {t('grammar.clearAll')}
             </Button>
           </Space>
         </div>
 
         {/* Search Bar */}
-        <Row gutter={16} style={{ marginBottom: showFilters ? 16 : 0 }}>
-          <Col span={12}>
+        <Row gutter={[16, 16]} style={{ marginBottom: showFilters ? 16 : 0 }}>
+          <Col xs={24} sm={24} md={12}>
             <Search
-              placeholder="Search lessons by title, content, or examples..."
+              placeholder={t('grammar.search')}
               allowClear
               enterButton={<SearchOutlined />}
-              size="large"
+              size={isMobile ? 'middle' : 'large'}
               onSearch={handleSearch}
               onChange={(e) => setSearchText(e.target.value)}
               value={searchText}
             />
           </Col>
-          <Col span={6}>
+          <Col xs={12} sm={12} md={6}>
             <Select
-              placeholder="Sort by"
+              placeholder={t('grammar.sortBy')}
               style={{ width: '100%' }}
-              size="large"
+              size={isMobile ? 'middle' : 'large'}
               value={sortOrder}
               onChange={setSortOrder}
             >
-              <Option value="created_at">Newest First</Option>
-              <Option value="-created_at">Oldest First</Option>
-              <Option value="title">Title A-Z</Option>
-              <Option value="-title">Title Z-A</Option>
-              <Option value="estimated_duration">Duration (Short First)</Option>
-              <Option value="-estimated_duration">Duration (Long First)</Option>
+              <Option value="created_at">{t('grammar.newestFirst')}</Option>
+              <Option value="-created_at">{t('grammar.oldestFirst')}</Option>
+              <Option value="title">{t('grammar.titleAZ')}</Option>
+              <Option value="-title">{t('grammar.titleZA')}</Option>
+              <Option value="estimated_duration">{t('grammar.durationShort')}</Option>
+              <Option value="-estimated_duration">{t('grammar.durationLong')}</Option>
             </Select>
           </Col>
-          <Col span={6}>
-            <div style={{ textAlign: 'center', padding: '8px 0', background: '#f5f5f5', borderRadius: '6px' }}>
-              <strong>Total: {total} lessons</strong>
+          <Col xs={12} sm={12} md={6}>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: isMobile ? '6px 0' : '8px 0', 
+              background: '#f5f5f5', 
+              borderRadius: '6px',
+              fontSize: isMobile ? '12px' : '14px'
+            }}>
+              <strong>{t('dashboard.total')}: {total} {t('grammar.lessons')}</strong>
             </div>
           </Col>
         </Row>
@@ -329,22 +350,23 @@ const SimpleGrammarList: React.FC = () => {
         {/* Advanced Filters (Collapsible) */}
         {showFilters && (
           <div style={{ 
-            padding: '16px', 
+            padding: isMobile ? '12px' : '16px', 
             background: '#fafafa', 
             borderRadius: '8px',
             border: '1px solid #e8e8e8'
           }}>
-            <Row gutter={16}>
-              <Col span={6}>
-                <div style={{ marginBottom: 8 }}>
-                  <strong>Category:</strong>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} md={6}>
+                <div style={{ marginBottom: 8, fontSize: isMobile ? '13px' : '14px' }}>
+                  <strong>{t('grammar.category')}:</strong>
                 </div>
                 <Select
-                  placeholder="Select category"
+                  placeholder={t('grammar.selectCategory')}
                   allowClear
                   style={{ width: '100%' }}
                   value={categoryFilter || undefined}
                   onChange={setCategoryFilter}
+                  size={isMobile ? 'middle' : 'large'}
                 >
                   {categories.map(category => (
                     <Option key={category.id} value={category.name}>
@@ -354,25 +376,26 @@ const SimpleGrammarList: React.FC = () => {
                 </Select>
               </Col>
               
-              <Col span={6}>
-                <div style={{ marginBottom: 8 }}>
-                  <strong>Status:</strong>
+              <Col xs={24} sm={12} md={6}>
+                <div style={{ marginBottom: 8, fontSize: isMobile ? '13px' : '14px' }}>
+                  <strong>{t('grammar.status')}:</strong>
                 </div>
                 <Select
-                  placeholder="Select status"
+                  placeholder={t('grammar.selectStatus')}
                   allowClear
                   style={{ width: '100%' }}
                   value={statusFilter || undefined}
                   onChange={setStatusFilter}
+                  size={isMobile ? 'middle' : 'large'}
                 >
-                  <Option value="published">✅ Published</Option>
-                  <Option value="draft">📝 Draft</Option>
+                  <Option value="published">✅ {t('dashboard.published')}</Option>
+                  <Option value="draft">📝 {t('dashboard.draft')}</Option>
                 </Select>
               </Col>
               
-              <Col span={12}>
-                <div style={{ marginBottom: 8 }}>
-                  <strong>Duration Range: {durationRange[0]} - {durationRange[1]} minutes</strong>
+              <Col xs={24} sm={24} md={12}>
+                <div style={{ marginBottom: 8, fontSize: isMobile ? '13px' : '14px' }}>
+                  <strong>{t('grammar.durationRange')}: {durationRange[0]} - {durationRange[1]} {t('grammar.minutes')}</strong>
                 </div>
                 <Slider
                   range
@@ -381,11 +404,11 @@ const SimpleGrammarList: React.FC = () => {
                   value={durationRange}
                   onChange={(value) => setDurationRange(value as [number, number])}
                   marks={{
-                    0: '0min',
-                    30: '30min',
-                    60: '1hr',
-                    90: '1.5hr',
-                    120: '2hr+'
+                    0: '0',
+                    30: '30',
+                    60: '60',
+                    90: '90',
+                    120: '120'
                   }}
                 />
               </Col>
@@ -394,33 +417,34 @@ const SimpleGrammarList: React.FC = () => {
         )}
       </Card>
       
+      
       {/* Stats Cards */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={8}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Total Lessons"
+              title={t('grammar.totalLessons')}
               value={stats.total_lessons || 0}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: '#3f8600', fontSize: isMobile ? '20px' : '24px' }}
               prefix={<BookOutlined />}
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={12} sm={8}>
           <Card>
             <Statistic
-              title="Beginner"
+              title={t('grammar.beginner')}
               value={stats.by_category?.beginner || stats.by_level?.beginner || 0}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#52c41a', fontSize: isMobile ? '20px' : '24px' }}
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={12} sm={8}>
           <Card>
             <Statistic
-              title="Advanced"
+              title={t('grammar.advanced')}
               value={stats.by_category?.advanced || stats.by_level?.advanced || 0}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#1890ff', fontSize: isMobile ? '20px' : '24px' }}
             />
           </Card>
         </Col>
@@ -429,21 +453,23 @@ const SimpleGrammarList: React.FC = () => {
       {/* Table */}
       <Card 
         title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>📖 Grammar Lessons</span>
-            <Tag color="blue" style={{ fontSize: '12px' }}>
-              {grammar.length} of {total} lessons
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: isMobile ? '14px' : '16px' }}>📖 {t('grammar.title')}</span>
+            <Tag color="blue" style={{ fontSize: isMobile ? '11px' : '12px' }}>
+              {grammar.length} {t('grammar.of')} {total} {t('grammar.lessons')}
             </Tag>
           </div>
         }
         extra={
-          <Button 
-            type="primary" 
-            style={{ borderRadius: '6px' }}
-            onClick={() => window.location.reload()}
-          >
-            🔄 Refresh
-          </Button>
+          !isMobile && (
+            <Button 
+              type="primary" 
+              style={{ borderRadius: '6px' }}
+              onClick={() => window.location.reload()}
+            >
+              🔄 {t('grammar.refresh')}
+            </Button>
+          )
         }
       >
         <Table
@@ -452,6 +478,7 @@ const SimpleGrammarList: React.FC = () => {
           loading={loading}
           rowKey="id"
           scroll={{ x: 'max-content' }}
+          size={isMobile ? 'small' : 'middle'}
           pagination={{
             current: 1,
             pageSize: 10,

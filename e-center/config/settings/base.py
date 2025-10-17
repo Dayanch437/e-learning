@@ -6,6 +6,8 @@ This file contains settings that are common across all environments.
 import os
 from pathlib import Path
 from decouple import config
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -31,6 +33,7 @@ THIRD_PARTY_APPS = [
     'django_filters',
     'drf_spectacular',
     'django_extensions',
+    'import_export',
 ]
 
 LOCAL_APPS = [
@@ -243,5 +246,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 # Gemini AI Settings
-GEMINI_API_KEY = config('GEMINI_API_KEY', default='AIzaSyABBhGjC1Ekh9ghn3I17kcur5zwSoJFpQU')
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='AIzaSyD42rXeGF4wxwkMZtUL7TD9-bBLSsI9Qro')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

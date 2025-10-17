@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Table, Card, Row, Col, Statistic, Input, Select, Tag, Button, Space, Tabs, Radio } from 'antd';
+import { Table, Card, Row, Col, Statistic, Input, Select, Tag, Button, Space, Tabs, Radio, Grid } from 'antd';
 import { BookOutlined, SoundOutlined, GlobalOutlined, TranslationOutlined, SearchOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { vocabularyAPI } from '../../services/api';
 import { VocabularyWord } from '../../types';
 
 const { Search } = Input;
 const { Option } = Select;
 const { TabPane } = Tabs;
+const { useBreakpoint } = Grid;
 
 const SimpleVocabularyList: React.FC = () => {
+  const { t } = useTranslation();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [words, setWords] = useState<VocabularyWord[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<any>({});

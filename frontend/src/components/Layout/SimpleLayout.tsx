@@ -16,6 +16,8 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useResponsive } from '../Utils/ResponsiveProvider';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -25,6 +27,7 @@ const SimpleLayout: React.FC = () => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const { isMobile } = useResponsive();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerVisible, setMobileDrawerVisible] = useState(false);
 
@@ -41,32 +44,32 @@ const SimpleLayout: React.FC = () => {
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: t('nav.dashboard'),
     },
     {
       key: '/grammar',
       icon: <BookOutlined />,
-      label: 'Grammar Lessons',
+      label: t('nav.grammar'),
     },
     {
       key: '/videos',
       icon: <PlayCircleOutlined />,
-      label: 'Video Lessons',
+      label: t('nav.videos'),
     },
     {
       key: '/vocabulary',
       icon: <TranslationOutlined />,
-      label: 'Vocabulary',
+      label: t('nav.vocabulary'),
     },
     {
       key: '/chat',
       icon: <RobotOutlined />,
-      label: 'English Tutor',
+      label: t('nav.chat'),
     },
     ...(isAdmin ? [{
       key: '/categories',
       icon: <FolderOutlined />,
-      label: 'Categories',
+      label: t('nav.categories'),
     }] : []),
     ...(isAdmin ? [{
       key: '/api-test',
@@ -79,7 +82,7 @@ const SimpleLayout: React.FC = () => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: 'Logout',
+      label: t('nav.logout'),
       onClick: handleLogout,
     },
   ];
@@ -180,6 +183,7 @@ const SimpleLayout: React.FC = () => {
           </div>
           
           <Space>
+            <LanguageSwitcher />
             {!isMobile && (
               <Tag color={getRoleColor(user?.role || '')}>
                 {user?.role?.toUpperCase()}

@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, Input, Button, List, Avatar, Spin, message } from 'antd';
+import { Card, Input, Button, List, Avatar, Spin, message, Grid } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { API_BASE_URL } from '../../host';
+
+const { useBreakpoint } = Grid;
 
 interface ChatMessage {
   id: string;
@@ -13,6 +16,9 @@ interface ChatMessage {
 
 const SimpleChat: React.FC = () => {
   const { user, accessToken } = useAuth();
+  const { t } = useTranslation();
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,13 +88,13 @@ const SimpleChat: React.FC = () => {
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error: any) {
       console.error('❌ Chat error:', error);
-      message.error(error.message || 'Failed to send message. Please try again.');
+      message.error(error.message || t('chat.error'));
       
       // Add error message to UI
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: `Error: ${error.message || 'Sorry, I encountered an error. Please try again.'}`,
+        content: `Error: ${error.message || t('chat.error')}`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -106,19 +112,30 @@ const SimpleChat: React.FC = () => {
 
   const clearChat = () => {
     setMessages([]);
-    message.success('Chat cleared');
+    message.success(t('chat.clearChat'));
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '12px' : '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <Card
         title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>🤖 AI Chat Assistant</span>
-            <Button onClick={clearChat} size="small">Clear Chat</Button>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            fontSize: isMobile ? '14px' : '16px'
+          }}>
+            <span>🤖 {t('chat.title')}</span>
+            <Button onClick={clearChat} size={isMobile ? 'small' : 'middle'}>
+              {t('chat.clearChat')}
+            </Button>
           </div>
         }
-        style={{ height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column' }}
+        style={{ 
+          height: isMobile ? 'calc(100vh - 100px)' : 'calc(100vh - 150px)', 
+          display: 'flex', 
+          flexDirection: 'column' 
+        }}
         bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0 }}
       >
         {/* Messages Area */}
@@ -126,12 +143,17 @@ const SimpleChat: React.FC = () => {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '20px',
+            padding: isMobile ? '12px' : '20px',
             backgroundColor: '#f5f5f5',
           }}
         >
           {messages.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: isMobile ? '20px' : '40px', 
+              color: '#999',
+              fontSize: isMobile ? '12px' : '14px'
+            }}>
               <RobotOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
               <p>Start a conversation with the AI assistant!</p>
               <p style={{ fontSize: '12px' }}>Ask me anything about English grammar, vocabulary, or practice conversation.</p>
@@ -201,20 +223,20 @@ const SimpleChat: React.FC = () => {
         {/* Input Area */}
         <div
           style={{
-            padding: '16px',
+            padding: isMobile ? '12px' : '16px',
             borderTop: '1px solid #f0f0f0',
             backgroundColor: '#fff',
           }}
         >
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: isMobile ? '4px' : '8px' }}>
             <Input.TextArea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your message... (Press Enter to send)"
+              placeholder={t('chat.placeholder')}
               autoSize={{ minRows: 1, maxRows: 4 }}
               disabled={loading}
-              style={{ flex: 1 }}
+              style={{ flex: 1, fontSize: isMobile ? '14px' : '16px' }}
             />
             <Button
               type="primary"
@@ -224,7 +246,7 @@ const SimpleChat: React.FC = () => {
               disabled={!inputValue.trim()}
               style={{ height: 'auto' }}
             >
-              Send
+              {!isMobile && t('chat.send')}
             </Button>
           </div>
         </div>
